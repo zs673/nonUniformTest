@@ -92,8 +92,8 @@ public class NewMrsPRTA {
 				task.local = localBlocking(task, tasks, resources, response_time, response_time[i][j]);
 				response_time_plus[i][j] = task.Ri = task.WCET + task.pure_resource_execution_time + task.spin + task.interference + task.local;
 
-				 if (task.Ri > task.deadline)
-				 return response_time_plus;
+				if (task.Ri > task.deadline)
+					return response_time_plus;
 
 			}
 		}
@@ -109,26 +109,36 @@ public class NewMrsPRTA {
 
 		for (int i = 0; i < LocalBlockingResources.size(); i++) {
 			Resource res = LocalBlockingResources.get(i);
-			long local_blocking = res.csl;
 
+			long max_lb = 0;
+
+			// get max local blocking
+			for (int j = 0; j < tasks.get(t.partition).size(); j++) {
+				SporadicTask llt = tasks.get(t.partition).get(j);
+				if (llt.priority < t.priority && llt.resource_required_index.contains(res.id - 1)
+						&& llt.resource_access_time.get(llt.resource_required_index.indexOf(res.id - 1)).get(0) > max_lb) {
+					max_lb = llt.resource_access_time.get(llt.resource_required_index.indexOf(res.id - 1)).get(0);
+				}
+			}
+
+			// get max remote blocking
 			if (res.isGlobal) {
 				for (int parition_index = 0; parition_index < res.partitions.size(); parition_index++) {
 					int partition = res.partitions.get(parition_index);
 					int norHP = getNoRFromHP(res, t, tasks.get(t.partition), Ris[t.partition], Ri);
 					int norT = t.resource_required_index.contains(res.id - 1)
 							? t.number_of_access_in_one_release.get(t.resource_required_index.indexOf(res.id - 1)) : 0;
-					int norR = getNoRRemote(res, tasks.get(partition), Ris[partition], Ri);
 
-					if (partition != t.partition && (norHP + norT) < norR) {
-						local_blocking += res.csl;
+					if (partition != t.partition) {
+						max_lb += getTheSpecificAccess(getDeLinkFromPartition(res, tasks.get(partition), Ris[partition], Ri), norHP+norT);
 					}
 				}
 			}
-			local_blocking_each_resource.add(local_blocking);
+			local_blocking_each_resource.add(max_lb);
 		}
 
 		if (local_blocking_each_resource.size() > 1)
-			local_blocking_each_resource.sort((l1, l2) -> -Double.compare(l1, l2));
+			local_blocking_each_resource.sort((l2, l1) -> Long.compare(l1, l2));
 
 		return local_blocking_each_resource.size() > 0 ? local_blocking_each_resource.get(0) : 0;
 
@@ -223,7 +233,7 @@ public class NewMrsPRTA {
 		long spin_delay = 0;
 		for (int k = 0; k < t.resource_required_index.size(); k++) {
 			Resource resource = resources.get(t.resource_required_index.get(k));
-			spin_delay += getNoSpinDelay(t, resource, tasks, Ris, Ri) * resource.csl;
+			spin_delay += getDirectSpinDelay(t, resource, tasks, Ris, Ri);
 		}
 		return spin_delay;
 	}
@@ -232,30 +242,23 @@ public class NewMrsPRTA {
 	 * gives the number of requests from remote partitions for a resource that
 	 * is required by the given task.
 	 */
-	private int getNoSpinDelay(SporadicTask task, Resource resource, ArrayList<ArrayList<SporadicTask>> tasks, long[][] Ris, long Ri) {
-		int number_of_spin_dealy = 0;
+	private int getDirectSpinDelay(SporadicTask task, Resource resource, ArrayList<ArrayList<SporadicTask>> tasks, long[][] Ris, long Ri) {
+		int spin_dealy = 0;
 
 		for (int i = 0; i < tasks.size(); i++) {
 			if (i != task.partition) {
-				/* For each remote partition */
-				int number_of_request_by_Remote_P = 0;
-				for (int j = 0; j < tasks.get(i).size(); j++) {
-					if (tasks.get(i).get(j).resource_required_index.contains(resource.id - 1)) {
-						SporadicTask remote_task = tasks.get(i).get(j);
-						int indexR = getIndexRInTask(remote_task, resource);
-						int number_of_release = (int) Math
-								.ceil((double) (Ri + (use_deadline_insteadof_Ri ? remote_task.deadline : Ris[i][j])) / (double) remote_task.period);
-						number_of_request_by_Remote_P += number_of_release * remote_task.number_of_access_in_one_release.get(indexR);
-					}
-				}
+				ArrayList<Long> remoteAccess = getDeLinkFromPartition(resource, tasks.get(i), Ris[i], Ri);
+				
 				int getNoRFromHP = getNoRFromHP(resource, task, tasks.get(task.partition), Ris[task.partition], Ri);
-				int possible_spin_delay = number_of_request_by_Remote_P - getNoRFromHP < 0 ? 0 : number_of_request_by_Remote_P - getNoRFromHP;
-
 				int NoRFromT = task.number_of_access_in_one_release.get(getIndexRInTask(task, resource));
-				number_of_spin_dealy += Integer.min(possible_spin_delay, NoRFromT);
+				
+				for(int start=getNoRFromHP;start<getNoRFromHP+NoRFromT;start++){
+					spin_dealy += getTheSpecificAccess(remoteAccess, start);
+				}
+				
 			}
 		}
-		return number_of_spin_dealy;
+		return spin_dealy;
 	}
 
 	private int getNoRRemote(Resource resource, ArrayList<SporadicTask> tasks, long[] Ris, long Ri) {
@@ -290,6 +293,31 @@ public class NewMrsPRTA {
 			}
 		}
 		return number_of_request_by_HP;
+	}
+
+	private long getTheSpecificAccess(ArrayList<Long> requests, int index) {
+		if (index >= requests.size()) {
+			return 0;
+		} else
+			return requests.get(index);
+	}
+
+	private ArrayList<Long> getDeLinkFromPartition(Resource resource, ArrayList<SporadicTask> tasks, long[] Ris, long Ri) {
+		ArrayList<Long> requests = new ArrayList<Long>();
+
+		for (int i = 0; i < tasks.size(); i++) {
+			if (tasks.get(i).resource_required_index.contains(resource.id - 1)) {
+				SporadicTask remote_task = tasks.get(i);
+				int indexR = getIndexRInTask(remote_task, resource);
+				int NoRelease = (int) Math
+						.ceil((double) (Ri + (use_deadline_insteadof_Ri ? remote_task.deadline : Ris[i])) / (double) remote_task.period);
+				for (int j = 0; j < NoRelease; j++) {
+					requests.addAll(remote_task.resource_access_time.get(indexR));
+				}
+			}
+		}
+		requests.sort((r2, r1) -> Long.compare(r1, r2));
+		return requests;
 	}
 
 	/*

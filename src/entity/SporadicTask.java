@@ -15,12 +15,14 @@ public class SporadicTask {
 
 	public ArrayList<Integer> resource_required_index;
 	public ArrayList<Integer> number_of_access_in_one_release;
+	public ArrayList<ArrayList<Long>> resource_access_time;
 
 	public int hasResource = 0;
 	public int[] resource_required_index_cpoy = null;
 	public int[] number_of_access_in_one_release_copy = null;
+	public long[][] resource_access_time_copy = null;
 
-	public long[][] resource_access_time = null;
+	
 	
 	public int index = 0;
 
@@ -34,6 +36,7 @@ public class SporadicTask {
 
 		resource_required_index = new ArrayList<>();
 		number_of_access_in_one_release = new ArrayList<>();
+		resource_access_time = new ArrayList<>();
 
 		resource_required_index_cpoy = null;
 		number_of_access_in_one_release_copy = null;

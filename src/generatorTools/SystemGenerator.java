@@ -121,7 +121,6 @@ public class SystemGenerator {
 	 */
 	public ArrayList<Resource> generateResources() {
 		/* generate resources from partitions/2 to partitions*2 */
-		Random ran = new Random();
 		int number_of_resources = 0;
 
 		switch (range) {
@@ -146,27 +145,6 @@ public class SystemGenerator {
 		}
 		return resources;
 	}
-	
-	// long cs_len = 0;
-	// switch (cs_len_range) {
-	// case VERY_LONG_CSLEN:
-	// cs_len = ran.nextInt(300) + 1;
-	// break;
-	// case LONG_CSLEN:
-	// cs_len = ran.nextInt(200) + 1;
-	// break;
-	// case MEDIUM_CS_LEN:
-	// cs_len = ran.nextInt(100) + 1;
-	// break;
-	// case SHORT_CS_LEN:
-	// cs_len = ran.nextInt(50) + 1;
-	// break;
-	// case VERY_SHORT_CS_LEN:
-	// cs_len = ran.nextInt(15) + 1;
-	// break;
-	// default:
-	// break;
-	// }
 
 	public int generateResourceUsage(ArrayList<ArrayList<SporadicTask>> tasks, ArrayList<Resource> resources) {
 		Random ran = new Random();
@@ -219,6 +197,7 @@ public class SystemGenerator {
 					}
 				}
 				task.resource_required_index.sort((r1, r2) -> Integer.compare(r1, r2));
+				//task.resource_access_time = new Long[task.resource_required_index.size()][];
 
 				long total_resource_execution_time = 0;
 				/*
@@ -228,7 +207,37 @@ public class SystemGenerator {
 				for (int k = 0; k < task.resource_required_index.size(); k++) {
 					int number_of_requests = ran.nextInt(number_of_max_access) + 1;
 					task.number_of_access_in_one_release.add(number_of_requests);
-					total_resource_execution_time += number_of_requests * resources.get(task.resource_required_index.get(k)).csl;
+					task.resource_access_time.add(new ArrayList<Long>());
+					
+
+					for (int request = 1; request <= number_of_requests; request++) {
+						long cs_len = 0;
+						switch (cs_len_range) {
+						case VERY_LONG_CSLEN:
+							cs_len = ran.nextInt(300) + 1;
+							break;
+						case LONG_CSLEN:
+							cs_len = ran.nextInt(200) + 1;
+							break;
+						case MEDIUM_CS_LEN:
+							cs_len = ran.nextInt(100) + 1;
+							break;
+						case SHORT_CS_LEN:
+							cs_len = ran.nextInt(50) + 1;
+							break;
+						case VERY_SHORT_CS_LEN:
+							cs_len = ran.nextInt(15) + 1;
+							break;
+						default:
+							break;
+						}
+						task.resource_access_time.get(k).add(cs_len);
+						total_resource_execution_time += cs_len;
+					}
+
+					// total_resource_execution_time += number_of_requests *
+					// resources.get(task.resource_required_index.get(k)).csl;
+					task.resource_access_time.get(k).sort((r2, r1) -> Long.compare(r1, r2));
 				}
 
 				/*
@@ -239,6 +248,7 @@ public class SystemGenerator {
 					l--;
 					task.resource_required_index.clear();
 					task.number_of_access_in_one_release.clear();
+					task.resource_access_time.clear();
 					failed++;
 				} else {
 					task.WCET = task.WCET - total_resource_execution_time;
@@ -249,6 +259,8 @@ public class SystemGenerator {
 
 						task.resource_required_index_cpoy = new int[task.resource_required_index.size()];
 						task.number_of_access_in_one_release_copy = new int[task.number_of_access_in_one_release.size()];
+						task.resource_access_time_copy = new long[task.resource_required_index.size()][];
+
 						if (task.number_of_access_in_one_release_copy.length != task.resource_required_index_cpoy.length) {
 							System.err.println("error, task copyies not equal size");
 							System.exit(-1);
@@ -256,6 +268,10 @@ public class SystemGenerator {
 						for (int resource_index = 0; resource_index < task.resource_required_index.size(); resource_index++) {
 							task.resource_required_index_cpoy[resource_index] = task.resource_required_index.get(resource_index);
 							task.number_of_access_in_one_release_copy[resource_index] = task.number_of_access_in_one_release.get(resource_index);
+							task.resource_access_time_copy[resource_index] = new long[task.resource_access_time.get(resource_index).size()];
+							for (int request = 0; request < task.resource_access_time.get(resource_index).size(); request++) {
+								task.resource_access_time_copy[resource_index][request] = task.resource_access_time.get(resource_index).get(request);
+							}
 						}
 					}
 
@@ -335,6 +351,26 @@ public class SystemGenerator {
 
 		System.out.println(resource_usage);
 		System.out.println("---------------------------------------------------------------------------------");
+		System.out.println();
+		System.out.println("resource accessing time");
+
+		for (int i = 0; i < tasks.size(); i++) {
+			for (int k = 0; k < tasks.get(i).size(); k++) {
+				SporadicTask task = tasks.get(i).get(k);
+
+				if (task.resource_required_index.size() > 0) {
+					for (int j = 0; j < task.resource_access_time.size(); j++) {
+						System.out.println("task T" + task.id + " access R" + resources.get(task.resource_required_index.get(j)).id);
+						for (int l = 0; l < task.resource_access_time.get(j).size(); l++) {
+							System.out.print(task.resource_access_time.get(j).get(l) + "	");
+						}
+						System.out.println();
+						System.out.println();
+					}
+				}
+
+			}
+		}
 
 	}
 }

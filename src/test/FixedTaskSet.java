@@ -31,21 +31,35 @@ public class FixedTaskSet {
 
 		/* Generate resource */
 		ArrayList<Resource> resources = new ArrayList<>();
-		resources.add(new Resource(1, 2));
+		resources.add(new Resource(1));
 		// resources.add(new Resource(2, 10));
 		// resources.add(new Resource(3, 5));
 
 		tasks.get(0).get(0).resource_required_index.add(0);
 		tasks.get(0).get(0).number_of_access_in_one_release.add(2);
 		tasks.get(0).get(0).pure_resource_execution_time = 2 * 2;
+		tasks.get(0).get(0).resource_access_time = new long[1][];
+		tasks.get(0).get(0).resource_access_time[0] = new long[2];
+		tasks.get(0).get(0).resource_access_time[0][0] = 2;
+		tasks.get(0).get(0).resource_access_time[0][1] = 2;
 
 		tasks.get(0).get(1).resource_required_index.add(0);
 		tasks.get(0).get(1).number_of_access_in_one_release.add(3);
 		tasks.get(0).get(1).pure_resource_execution_time = 2 * 3;
+		tasks.get(0).get(1).resource_access_time = new long[1][];
+		tasks.get(0).get(1).resource_access_time[0] = new long[3];
+		tasks.get(0).get(1).resource_access_time[0][0] = 2;
+		tasks.get(0).get(1).resource_access_time[0][1] = 2;
+		tasks.get(0).get(1).resource_access_time[0][2] = 2;
 
 		tasks.get(0).get(2).resource_required_index.add(0);
 		tasks.get(0).get(2).number_of_access_in_one_release.add(3);
 		tasks.get(0).get(2).pure_resource_execution_time = 2 * 3;
+		tasks.get(0).get(2).resource_access_time = new long[1][];
+		tasks.get(0).get(2).resource_access_time[0] = new long[3];
+		tasks.get(0).get(2).resource_access_time[0][0] = 2;
+		tasks.get(0).get(2).resource_access_time[0][1] = 2;
+		tasks.get(0).get(2).resource_access_time[0][2] = 2;
 
 		// tasks.get(0).get(2).resource_required_index.add(1);
 		// tasks.get(0).get(2).number_of_access_in_one_release.add(3);
@@ -59,6 +73,13 @@ public class FixedTaskSet {
 		tasks.get(1).get(0).resource_required_index.add(0);
 		tasks.get(1).get(0).number_of_access_in_one_release.add(5);
 		tasks.get(1).get(0).pure_resource_execution_time = 2 * 5;
+		tasks.get(1).get(0).resource_access_time = new long[1][];
+		tasks.get(1).get(0).resource_access_time[0] = new long[5];
+		tasks.get(1).get(0).resource_access_time[0][0] = 2;
+		tasks.get(1).get(0).resource_access_time[0][1] = 2;
+		tasks.get(1).get(0).resource_access_time[0][2] = 2;
+		tasks.get(1).get(0).resource_access_time[0][3] = 2;
+		tasks.get(1).get(0).resource_access_time[0][4] = 2;
 
 		// tasks.get(1).get(0).resource_required_index.add(1);
 		// tasks.get(1).get(0).number_of_access_in_one_release.add(5);
