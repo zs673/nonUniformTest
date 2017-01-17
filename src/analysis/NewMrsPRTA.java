@@ -130,7 +130,7 @@ public class NewMrsPRTA {
 							? t.number_of_access_in_one_release.get(t.resource_required_index.indexOf(res.id - 1)) : 0;
 
 					if (partition != t.partition) {
-						max_lb += getTheSpecificAccess(getDeLinkFromPartition(res, tasks.get(partition), Ris[partition], Ri), norHP+norT);
+						max_lb += getTheSpecificAccess(getDeLinkFromPartition(res, tasks.get(partition), Ris[partition], Ri), norHP + norT);
 					}
 				}
 			}
@@ -203,23 +203,33 @@ public class NewMrsPRTA {
 			Resource resource = resources.get(hpTask.resource_required_index.get(i));
 
 			int number_of_higher_request = getNoRFromHP(resource, hpTask, allTasks.get(hpTask.partition), Ris[hpTask.partition], Ri);
-			int number_of_request_with_btb = (int) Math
+			int number_of_release_with_btb = (int) Math
 					.ceil((double) (Ri + (use_deadline_insteadof_Ri ? hpTask.deadline : Rihp)) / (double) hpTask.period)
-					* hpTask.number_of_access_in_one_release.get(i);
+					;
+			
+			ArrayList<Long> hp_access = new ArrayList<>();
+			for(int k=0;k<number_of_release_with_btb;k++){
+				hp_access.addAll(hpTask.resource_access_time.get(hpTask.resource_access_time.indexOf(resource.id-1)));
+			}
+			hp_access.sort((r2, r1) -> Long.compare(r1, r2));
 
-			BTBhit += number_of_request_with_btb * resource.csl;
+			for(int k=0; k<hp_access.size();k++){
+				BTBhit+= hp_access.get(k);
+			}
 
 			for (int j = 0; j < resource.partitions.size(); j++) {
 				if (resource.partitions.get(j) != hpTask.partition) {
 					int remote_partition = resource.partitions.get(j);
-					int number_of_remote_request = getNoRRemote(resource, allTasks.get(remote_partition), Ris[remote_partition], Ri);
+//					int number_of_remote_request = getNoRRemote(resource, allTasks.get(remote_partition), Ris[remote_partition], Ri);
+//
+//					int possible_spin_delay = number_of_remote_request - number_of_higher_request < 0 ? 0
+//							: number_of_remote_request - number_of_higher_request;
+//
+//					int spin_delay_with_btb = Integer.min(possible_spin_delay, number_of_request_with_btb);
+					
+					
 
-					int possible_spin_delay = number_of_remote_request - number_of_higher_request < 0 ? 0
-							: number_of_remote_request - number_of_higher_request;
-
-					int spin_delay_with_btb = Integer.min(possible_spin_delay, number_of_request_with_btb);
-
-					BTBhit += spin_delay_with_btb * resource.csl;
+					BTBhit += 
 				}
 			}
 		}
@@ -248,14 +258,14 @@ public class NewMrsPRTA {
 		for (int i = 0; i < tasks.size(); i++) {
 			if (i != task.partition) {
 				ArrayList<Long> remoteAccess = getDeLinkFromPartition(resource, tasks.get(i), Ris[i], Ri);
-				
+
 				int getNoRFromHP = getNoRFromHP(resource, task, tasks.get(task.partition), Ris[task.partition], Ri);
 				int NoRFromT = task.number_of_access_in_one_release.get(getIndexRInTask(task, resource));
-				
-				for(int start=getNoRFromHP;start<getNoRFromHP+NoRFromT;start++){
+
+				for (int start = getNoRFromHP; start < getNoRFromHP + NoRFromT; start++) {
 					spin_dealy += getTheSpecificAccess(remoteAccess, start);
 				}
-				
+
 			}
 		}
 		return spin_dealy;
