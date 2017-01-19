@@ -8,14 +8,12 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
-import analysis.NewMrsPRTA;
-import analysis.NewMrsPRTAWithMC;
-import analysis.NewMrsPRTAWithMCNP;
+import analysis.NewMrsP;
 import entity.Resource;
 import entity.SporadicTask;
 import generatorTools.SystemGenerator;
-import test.SchedulabilityTest.CS_LENGTH_RANGE;
-import test.SchedulabilityTest.RESOURCES_RANGE;
+import generatorTools.SystemGenerator.CS_LENGTH_RANGE;
+import generatorTools.SystemGenerator.RESOURCES_RANGE;
 
 public class MIgrationCostSchedTest {
 
@@ -83,26 +81,23 @@ public class MIgrationCostSchedTest {
 
 		int NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION = smallSet;
 
-		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD, 0.1 * (double) NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION,
-				TOTAL_PARTITIONS, NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION, true, CS_LENGTH_RANGE.VERY_SHORT_CS_LEN, RESOURCES_RANGE.PARTITIONS,
-				RESOURCE_SHARING_FACTOR, NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
+		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD,
+				0.1 * (double) NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION, TOTAL_PARTITIONS,
+				NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION, true, CS_LENGTH_RANGE.VERY_SHORT_CS_LEN,
+				RESOURCES_RANGE.PARTITIONS, RESOURCE_SHARING_FACTOR, NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
 
 		long[][] Ris;
-		NewMrsPRTA mrsp = new NewMrsPRTA();
-		NewMrsPRTAWithMC mrsp_mig = new NewMrsPRTAWithMC();
-		NewMrsPRTAWithMCNP mrsp_np = new NewMrsPRTAWithMCNP();
+		NewMrsP mrsp = new NewMrsP(0, 0, false);
+		NewMrsP mrsp_mig = new NewMrsP(1, 0, false);
+		NewMrsP mrsp_np_1 = new NewMrsP(1, 1, false);
+		NewMrsP mrsp_np_20 = new NewMrsP(1, 20, false);
+		NewMrsP mrsp_np_100 = new NewMrsP(1, 100, false);
 
 		String result = "";
 		int smrsp = 0;
 		int smrsp_mig = 0;
 		int smrsp_np1 = 0;
-		int smrsp_np5 = 0;
-		int smrsp_np10 = 0;
 		int smrsp_np20 = 0;
-		int smrsp_np25 = 0;
-		int smrsp_np30 = 0;
-		int smrsp_np40 = 0;
-		int smrsp_np50 = 0;
 		int smrsp_np100 = 0;
 
 		for (int i = 0; i < TOTAL_NUMBER_OF_SYSTEMS; i++) {
@@ -110,47 +105,23 @@ public class MIgrationCostSchedTest {
 			ArrayList<Resource> resources = generator.generateResources();
 			generator.generateResourceUsage(tasks, resources);
 
-			Ris = mrsp.NewMrsPRTATest(tasks, resources, false);
+			Ris = mrsp.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 1, false);
+			Ris = mrsp_np_1.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np1++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 5, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np5++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 10, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np10++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 20, false);
+			Ris = mrsp_np_20.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np20++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 25, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np25++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 30, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np30++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 40, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np40++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 50, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np50++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 100, false);
+			Ris = mrsp_np_100.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np100++;
 
-			Ris = mrsp_mig.NewMrsPRTATest(tasks, resources, 1, false);
+			Ris = mrsp_mig.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_mig++;
 
@@ -158,11 +129,10 @@ public class MIgrationCostSchedTest {
 
 		}
 
-		result += (double) smrsp / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np1 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np5 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np10 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np20 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np25 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np30 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np40 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np50 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np100 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+		result += (double) smrsp / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np1 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np20 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np100 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
 				+ (double) smrsp_mig / (double) TOTAL_NUMBER_OF_SYSTEMS + "\n";
 
 		// System.out.print(result);
@@ -197,26 +167,22 @@ public class MIgrationCostSchedTest {
 			break;
 		}
 
-		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD, 0.1 * (double) NUMBER_OF_TASKS_ON_EACH_PARTITION, TOTAL_PARTITIONS,
-				NUMBER_OF_TASKS_ON_EACH_PARTITION, true, range, RESOURCES_RANGE.PARTITIONS, RESOURCE_SHARING_FACTOR,
-				NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
+		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD,
+				0.1 * (double) NUMBER_OF_TASKS_ON_EACH_PARTITION, TOTAL_PARTITIONS, NUMBER_OF_TASKS_ON_EACH_PARTITION,
+				true, range, RESOURCES_RANGE.PARTITIONS, RESOURCE_SHARING_FACTOR, NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
 
 		long[][] Ris;
-		NewMrsPRTA mrsp = new NewMrsPRTA();
-		NewMrsPRTAWithMC mrsp_mig = new NewMrsPRTAWithMC();
-		NewMrsPRTAWithMCNP mrsp_np = new NewMrsPRTAWithMCNP();
+		NewMrsP mrsp = new NewMrsP(0, 0, false);
+		NewMrsP mrsp_mig = new NewMrsP(1, 0, false);
+		NewMrsP mrsp_np_1 = new NewMrsP(1, 1, false);
+		NewMrsP mrsp_np_20 = new NewMrsP(1, 20, false);
+		NewMrsP mrsp_np_100 = new NewMrsP(1, 100, false);
 
 		String result = "";
 		int smrsp = 0;
 		int smrsp_mig = 0;
 		int smrsp_np1 = 0;
-		int smrsp_np5 = 0;
-		int smrsp_np10 = 0;
 		int smrsp_np20 = 0;
-		int smrsp_np25 = 0;
-		int smrsp_np30 = 0;
-		int smrsp_np40 = 0;
-		int smrsp_np50 = 0;
 		int smrsp_np100 = 0;
 
 		for (int i = 0; i < TOTAL_NUMBER_OF_SYSTEMS; i++) {
@@ -224,47 +190,23 @@ public class MIgrationCostSchedTest {
 			ArrayList<Resource> resources = generator.generateResources();
 			generator.generateResourceUsage(tasks, resources);
 
-			Ris = mrsp.NewMrsPRTATest(tasks, resources, false);
+			Ris = mrsp.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 1, false);
+			Ris = mrsp_np_1.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np1++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 5, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np5++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 10, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np10++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 20, false);
+			Ris = mrsp_np_20.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np20++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 25, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np25++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 30, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np30++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 40, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np40++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 50, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np50++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 100, false);
+			Ris = mrsp_np_100.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np100++;
 
-			Ris = mrsp_mig.NewMrsPRTATest(tasks, resources, 1, false);
+			Ris = mrsp_mig.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_mig++;
 
@@ -272,11 +214,10 @@ public class MIgrationCostSchedTest {
 
 		}
 
-		result += (double) smrsp / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np1 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np5 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np10 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np20 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np25 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np30 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np40 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np50 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np100 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+		result += (double) smrsp / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np1 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np20 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np100 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
 				+ (double) smrsp_mig / (double) TOTAL_NUMBER_OF_SYSTEMS + "\n";
 		// System.out.print(result);
 		writeSystem(("mig 2 " + bigSet + " " + smallSet), result);
@@ -287,25 +228,24 @@ public class MIgrationCostSchedTest {
 		int NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE = 1 + 5 * (smallSet - 1);
 		int NUMBER_OF_TASKS_ON_EACH_PARTITION = 4 + 2 * (bigSet - 1);
 
-		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD, 0.1 * (double) NUMBER_OF_TASKS_ON_EACH_PARTITION, TOTAL_PARTITIONS,
-				NUMBER_OF_TASKS_ON_EACH_PARTITION, true, CS_LENGTH_RANGE.VERY_SHORT_CS_LEN, RESOURCES_RANGE.PARTITIONS, RESOURCE_SHARING_FACTOR,
+		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD,
+				0.1 * (double) NUMBER_OF_TASKS_ON_EACH_PARTITION, TOTAL_PARTITIONS, NUMBER_OF_TASKS_ON_EACH_PARTITION,
+				true, CS_LENGTH_RANGE.VERY_SHORT_CS_LEN, RESOURCES_RANGE.PARTITIONS, RESOURCE_SHARING_FACTOR,
 				NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
+		
+		
 		long[][] Ris;
-		NewMrsPRTA mrsp = new NewMrsPRTA();
-		NewMrsPRTAWithMC mrsp_mig = new NewMrsPRTAWithMC();
-		NewMrsPRTAWithMCNP mrsp_np = new NewMrsPRTAWithMCNP();
+		NewMrsP mrsp = new NewMrsP(0, 0, false);
+		NewMrsP mrsp_mig = new NewMrsP(1, 0, false);
+		NewMrsP mrsp_np_1 = new NewMrsP(1, 1, false);
+		NewMrsP mrsp_np_20 = new NewMrsP(1, 20, false);
+		NewMrsP mrsp_np_100 = new NewMrsP(1, 100, false);
 
 		String result = "";
 		int smrsp = 0;
 		int smrsp_mig = 0;
 		int smrsp_np1 = 0;
-		int smrsp_np5 = 0;
-		int smrsp_np10 = 0;
 		int smrsp_np20 = 0;
-		int smrsp_np25 = 0;
-		int smrsp_np30 = 0;
-		int smrsp_np40 = 0;
-		int smrsp_np50 = 0;
 		int smrsp_np100 = 0;
 
 		for (int i = 0; i < TOTAL_NUMBER_OF_SYSTEMS; i++) {
@@ -313,47 +253,23 @@ public class MIgrationCostSchedTest {
 			ArrayList<Resource> resources = generator.generateResources();
 			generator.generateResourceUsage(tasks, resources);
 
-			Ris = mrsp.NewMrsPRTATest(tasks, resources, false);
+			Ris = mrsp.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 1, false);
+			Ris = mrsp_np_1.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np1++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 5, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np5++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 10, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np10++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 20, false);
+			Ris = mrsp_np_20.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np20++;
 
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 25, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np25++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 30, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np30++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 40, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np40++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 50, false);
-			if (isSystemSchedulable(tasks, Ris))
-				smrsp_np50++;
-
-			Ris = mrsp_np.NewMrsPRTATest(tasks, resources, 1, 100, false);
+			Ris = mrsp_np_100.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_np100++;
 
-			Ris = mrsp_mig.NewMrsPRTATest(tasks, resources, 1, false);
+			Ris = mrsp_mig.schedulabilityTest(tasks, resources);
 			if (isSystemSchedulable(tasks, Ris))
 				smrsp_mig++;
 
@@ -361,11 +277,10 @@ public class MIgrationCostSchedTest {
 
 		}
 
-		result += (double) smrsp / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np1 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np5 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np10 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np20 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np25 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np30 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np40 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
-				+ (double) smrsp_np50 / (double) TOTAL_NUMBER_OF_SYSTEMS + " " + (double) smrsp_np100 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+		result += (double) smrsp / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np1 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np20 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
+				+ (double) smrsp_np100 / (double) TOTAL_NUMBER_OF_SYSTEMS + " "
 				+ (double) smrsp_mig / (double) TOTAL_NUMBER_OF_SYSTEMS + "\n";
 		// System.out.print(result);
 		writeSystem(("mig 3 " + bigSet + " " + smallSet), result);

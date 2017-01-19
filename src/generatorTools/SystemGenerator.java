@@ -2,11 +2,24 @@ package generatorTools;
 
 import java.util.ArrayList;
 import java.util.Random;
+
 import entity.Resource;
 import entity.SporadicTask;
-import test.SchedulabilityTest;
 
 public class SystemGenerator {
+
+	/* define how long the critical section can be */
+	public static enum CS_LENGTH_RANGE {
+		VERY_LONG_CSLEN, LONG_CSLEN, MEDIUM_CS_LEN, SHORT_CS_LEN, VERY_SHORT_CS_LEN
+	};
+
+	/* define how many resources in the system */
+	public static enum RESOURCES_RANGE {
+		HALF_PARITIONS, /* partitions / 2 us */
+		PARTITIONS, /* partitions us */
+		DOUBLE_PARTITIONS, /* partitions * 2 us */
+	};
+
 	public int task_id = 1;
 	public int minT;
 	public int maxT;
@@ -14,14 +27,15 @@ public class SystemGenerator {
 	public int total_partitions;
 	public int number_of_tasks_per_processor;
 	public boolean isLogUni;
-	public SchedulabilityTest.CS_LENGTH_RANGE cs_len_range;
-	public SchedulabilityTest.RESOURCES_RANGE range;
+	public CS_LENGTH_RANGE cs_len_range;
+	public RESOURCES_RANGE range;
 
 	public double rsf;
 	public int number_of_max_access;
 
-	public SystemGenerator(int minT, int maxT, double util, int total_partitions, int number_of_tasks_per_processor, boolean isLogUni,
-			SchedulabilityTest.CS_LENGTH_RANGE cs_len_range, SchedulabilityTest.RESOURCES_RANGE range, double rsf, int number_of_max_access) {
+	public SystemGenerator(int minT, int maxT, double util, int total_partitions, int number_of_tasks_per_processor,
+			boolean isLogUni, CS_LENGTH_RANGE cs_len_range, RESOURCES_RANGE range, double rsf,
+			int number_of_max_access) {
 		this.minT = minT;
 		this.maxT = maxT;
 		this.util = util;
@@ -197,7 +211,8 @@ public class SystemGenerator {
 					}
 				}
 				task.resource_required_index.sort((r1, r2) -> Integer.compare(r1, r2));
-				//task.resource_access_time = new Long[task.resource_required_index.size()][];
+				// task.resource_access_time = new
+				// Long[task.resource_required_index.size()][];
 
 				long total_resource_execution_time = 0;
 				/*
@@ -208,7 +223,6 @@ public class SystemGenerator {
 					int number_of_requests = ran.nextInt(number_of_max_access) + 1;
 					task.number_of_access_in_one_release.add(number_of_requests);
 					task.resource_access_time.add(new ArrayList<Long>());
-					
 
 					for (int request = 1; request <= number_of_requests; request++) {
 						long cs_len = 0;
@@ -258,19 +272,33 @@ public class SystemGenerator {
 						task.hasResource = 1;
 
 						task.resource_required_index_cpoy = new int[task.resource_required_index.size()];
-						task.number_of_access_in_one_release_copy = new int[task.number_of_access_in_one_release.size()];
-						task.resource_access_time_copy = new long[task.resource_required_index.size()][];
+						task.number_of_access_in_one_release_copy = new int[task.number_of_access_in_one_release
+								.size()];
 
 						if (task.number_of_access_in_one_release_copy.length != task.resource_required_index_cpoy.length) {
 							System.err.println("error, task copyies not equal size");
 							System.exit(-1);
 						}
-						for (int resource_index = 0; resource_index < task.resource_required_index.size(); resource_index++) {
-							task.resource_required_index_cpoy[resource_index] = task.resource_required_index.get(resource_index);
-							task.number_of_access_in_one_release_copy[resource_index] = task.number_of_access_in_one_release.get(resource_index);
-							task.resource_access_time_copy[resource_index] = new long[task.resource_access_time.get(resource_index).size()];
-							for (int request = 0; request < task.resource_access_time.get(resource_index).size(); request++) {
-								task.resource_access_time_copy[resource_index][request] = task.resource_access_time.get(resource_index).get(request);
+						for (int resource_index = 0; resource_index < task.resource_required_index
+								.size(); resource_index++) {
+							task.resource_required_index_cpoy[resource_index] = task.resource_required_index
+									.get(resource_index);
+							task.number_of_access_in_one_release_copy[resource_index] = task.number_of_access_in_one_release
+									.get(resource_index);
+						}
+
+						int totalaccess = 0;
+						for (int k = 0; k < task.resource_access_time.size(); k++) {
+							for (int j = 0; j < task.resource_access_time.get(k).size(); j++) {
+								totalaccess++;
+							}
+						}
+						task.resource_access_time_copy = new long[totalaccess];
+						int index = 0;
+						for (int k = 0; k < task.resource_access_time.size(); k++) {
+							for (int j = 0; j < task.resource_access_time.get(k).size(); j++) {
+								task.resource_access_time_copy[index] = task.resource_access_time.get(k).get(j);
+								index++;
 							}
 						}
 					}
@@ -313,7 +341,8 @@ public class SystemGenerator {
 		return fails;
 	}
 
-	public void testifyGeneratedTasksetAndResource(ArrayList<ArrayList<SporadicTask>> tasks, ArrayList<Resource> resources) {
+	public void testifyGeneratedTasksetAndResource(ArrayList<ArrayList<SporadicTask>> tasks,
+			ArrayList<Resource> resources) {
 		System.out.println("----------------------------------------------------");
 		for (int i = 0; i < tasks.size(); i++) {
 			double util = 0;
@@ -340,8 +369,8 @@ public class SystemGenerator {
 				SporadicTask task = tasks.get(i).get(j);
 				String usage = "T" + task.id + ": ";
 				for (int k = 0; k < task.resource_required_index.size(); k++) {
-					usage = usage + "R" + resources.get(task.resource_required_index.get(k)).id + " - " + task.number_of_access_in_one_release.get(k)
-							+ ";  ";
+					usage = usage + "R" + resources.get(task.resource_required_index.get(k)).id + " - "
+							+ task.number_of_access_in_one_release.get(k) + ";  ";
 				}
 				usage += "\n";
 				if (task.resource_required_index.size() > 0)
@@ -360,7 +389,8 @@ public class SystemGenerator {
 
 				if (task.resource_required_index.size() > 0) {
 					for (int j = 0; j < task.resource_access_time.size(); j++) {
-						System.out.println("task T" + task.id + " access R" + resources.get(task.resource_required_index.get(j)).id);
+						System.out.println("task T" + task.id + " access R"
+								+ resources.get(task.resource_required_index.get(j)).id);
 						for (int l = 0; l < task.resource_access_time.get(j).size(); l++) {
 							System.out.print(task.resource_access_time.get(j).get(l) + "	");
 						}

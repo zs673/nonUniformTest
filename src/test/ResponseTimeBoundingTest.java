@@ -9,10 +9,12 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import analysis.FIFONPLinearJava;
-import analysis.NewMrsPRTA;
+import analysis.NewMrsP;
 import entity.Resource;
 import entity.SporadicTask;
 import generatorTools.SystemGenerator;
+import generatorTools.SystemGenerator.CS_LENGTH_RANGE;
+import generatorTools.SystemGenerator.RESOURCES_RANGE;
 
 public class ResponseTimeBoundingTest {
 
@@ -25,7 +27,7 @@ public class ResponseTimeBoundingTest {
 	public static int NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE = 25;
 	public static double RESOURCE_SHARING_FACTOR = .4;
 
-	public static SchedulabilityTest.CS_LENGTH_RANGE range = SchedulabilityTest.CS_LENGTH_RANGE.VERY_SHORT_CS_LEN;
+	public static CS_LENGTH_RANGE range = CS_LENGTH_RANGE.VERY_SHORT_CS_LEN;
 
 	public static void main(String[] args) {
 
@@ -34,11 +36,11 @@ public class ResponseTimeBoundingTest {
 
 	public static void run() {
 
-		NewMrsPRTA new_mrsp = new NewMrsPRTA();
+		NewMrsP new_mrsp = new NewMrsP(0,0,false);
 		FIFONPLinearJava fnp = new FIFONPLinearJava();
 
 		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD, 0.1 * (double) NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION,
-				TOTAL_PARTITIONS, NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION, true, range, SchedulabilityTest.RESOURCES_RANGE.PARTITIONS,
+				TOTAL_PARTITIONS, NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION, true, range, RESOURCES_RANGE.PARTITIONS,
 				RESOURCE_SHARING_FACTOR, NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
 
 		long[][] r1, r2, diff;
@@ -53,8 +55,8 @@ public class ResponseTimeBoundingTest {
 			ArrayList<Resource> resources = generator.generateResources();
 			generator.generateResourceUsage(tasks, resources);
 
-			r1 = fnp.NewMrsPRTATest(tasks, resources, false);
-			r2 = new_mrsp.NewMrsPRTATest(tasks, resources, false);
+			r1 = fnp.schedulabilityTest(tasks, resources, false);
+			r2 = new_mrsp.schedulabilityTest(tasks, resources);
 
 			if (isSystemSchedulable(tasks, r1) && isSystemSchedulable(tasks, r2)) {
 				diff = diff(r1, r2);

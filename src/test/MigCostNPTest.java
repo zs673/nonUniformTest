@@ -2,11 +2,12 @@ package test;
 
 import java.util.ArrayList;
 
-import analysis.NewMrsPRTAWithMC;
-import analysis.NewMrsPRTAWithMCNP;
+import analysis.NewMrsP;
 import entity.Resource;
 import entity.SporadicTask;
 import generatorTools.SystemGenerator;
+import generatorTools.SystemGenerator.CS_LENGTH_RANGE;
+import generatorTools.SystemGenerator.RESOURCES_RANGE;
 
 public class MigCostNPTest {
 
@@ -20,12 +21,12 @@ public class MigCostNPTest {
 
 	public static void main(String[] args) {
 
-		NewMrsPRTAWithMC mrsp_mc = new NewMrsPRTAWithMC();
-		NewMrsPRTAWithMCNP mrsp_mcnp = new NewMrsPRTAWithMCNP();
+		NewMrsP mrsp_mc = new NewMrsP(1,0,false);
+		NewMrsP mrsp_mcnp = new NewMrsP(1,1,false);
 
 		SystemGenerator generator = new SystemGenerator(MIN_PERIOD, MAX_PERIOD, 0.1 * (double) NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION,
-				TOTAL_PARTITIONS, NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION, true, SchedulabilityTest.CS_LENGTH_RANGE.MEDIUM_CS_LEN,
-				SchedulabilityTest.RESOURCES_RANGE.PARTITIONS, RESOURCE_SHARING_FACTOR, NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
+				TOTAL_PARTITIONS, NUMBER_OF_MAX_TASKS_ON_EACH_PARTITION, true, CS_LENGTH_RANGE.MEDIUM_CS_LEN,
+				RESOURCES_RANGE.PARTITIONS, RESOURCE_SHARING_FACTOR, NUMBER_OF_MAX_ACCESS_TO_ONE_RESOURCE);
 
 		for (int i = 0; i < 1000000; i++) {
 			ArrayList<ArrayList<SporadicTask>> tasks = generator.generateTasks();
@@ -33,16 +34,8 @@ public class MigCostNPTest {
 			generator.generateResourceUsage(tasks, resources);
 			System.out.println(i);
 			
-			
-//			mrsp_mcnp.NewMrsPRTATest(tasks, resources,1,false);
-//			mrsp_mcnp.NewMrsPRTATest(tasks, resources,10,false);
-//			mrsp_mcnp.NewMrsPRTATest(tasks, resources,50,false);
-//			mrsp_mcnp.NewMrsPRTATest(tasks, resources,100,false);
-			
-			mrsp_mc.NewMrsPRTATest(tasks, resources,1,false);
-			mrsp_mc.NewMrsPRTATest(tasks, resources,10,false);
-			mrsp_mc.NewMrsPRTATest(tasks, resources,50,false);
-			mrsp_mc.NewMrsPRTATest(tasks, resources,100,false);
+			mrsp_mc.schedulabilityTest(tasks, resources);
+			mrsp_mcnp.schedulabilityTest(tasks, resources);
 			
 			
 		}
